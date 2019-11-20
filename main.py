@@ -70,6 +70,7 @@ def readData():
 	compensate_T(temp_raw)
 	compensate_P(pres_raw)
 	compensate_H(hum_raw)
+	# Write a code for writing to DB...
 
 def compensate_P(adc_P):
 	global t_fine
@@ -95,6 +96,7 @@ def compensate_P(adc_P):
 
 	#print "pressure : %7.2f hPa" % (pressure / 100)
 	print('pressure : %7.2f hPa' % (pressure / 100))
+	#return (pressure / 100)
 
 def compensate_T(adc_T):
 	global t_fine
@@ -104,6 +106,7 @@ def compensate_T(adc_T):
 	temperature = t_fine / 5120.0
 	#print "temp : %-6.2f Cels." % (temperature)
 	print('temp : %-6.2f Cels.' % (temperature))
+	#return temperature
 
 def compensate_H(adc_H):
 	global t_fine
@@ -119,6 +122,7 @@ def compensate_H(adc_H):
 		var_h = 0.0
 	#print "humid : %6.2f %" % (var_h)
 	print('humid : %6.2f Percent' % (var_h))
+	#retrun var_h
 
 def setup():
 	osrs_t = 1	#Temperature oversampling x 1
