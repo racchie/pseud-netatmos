@@ -4,6 +4,10 @@
 # need to install python3-smbus instead of python-smbus(this is for python2 series)
 from smbus import SMBus
 import time
+import datetime
+#import for DB
+import sqlite3
+from contextlib import closing
 
 bus_number = 1
 i2c_address = 0x76
@@ -67,10 +71,16 @@ def readData():
 	temp_raw = (data[3] << 12) | (data[4] << 4) | (data[5] >> 4)
 	hum_raw  = (data[6] <<  8) |  data[7]
 
-	compensate_T(temp_raw)
-	compensate_P(pres_raw)
-	compensate_H(hum_raw)
+	#print(datetime.datetime.now())
+	#compensate_T(temp_raw)
+	#compensate_P(pres_raw)
+	#compensate_H(hum_raw)
 	# Write a code for writing to DB...
+	dt = datetime.datetime.now()
+	temp = compensate_T(temp_raw)
+	hum = compensate_H(hum_raw)
+	pres = compensate_P(pres_raw)
+	writeDB(dt, temp, hum, pres)
 
 def compensate_P(adc_P):
 	global t_fine
@@ -95,8 +105,9 @@ def compensate_P(adc_P):
 	pressure = pressure + ((v1 + v2 + digP[6]) / 16.0)
 
 	#print "pressure : %7.2f hPa" % (pressure / 100)
-	print('pressure : %7.2f hPa' % (pressure / 100))
-	#return (pressure / 100)
+	#print('pressure : %7.2f hPa' % (pressure / 100))
+	#print(type(pressure))
+	return (pressure / 100)
 
 def compensate_T(adc_T):
 	global t_fine
@@ -105,8 +116,9 @@ def compensate_T(adc_T):
 	t_fine = v1 + v2
 	temperature = t_fine / 5120.0
 	#print "temp : %-6.2f Cels." % (temperature)
-	print('temp : %-6.2f Cels.' % (temperature))
-	#return temperature
+	#print('temp : %-6.2f Cels.' % (temperature))
+	#print(type(temperature))
+	return temperature
 
 def compensate_H(adc_H):
 	global t_fine
@@ -121,8 +133,9 @@ def compensate_H(adc_H):
 	elif var_h < 0.0:
 		var_h = 0.0
 	#print "humid : %6.2f %" % (var_h)
-	print('humid : %6.2f Percent' % (var_h))
-	#retrun var_h
+	#print('humid : %6.2f Percent' % (var_h))
+	#print(type(var_h))
+	return var_h
 
 def setup():
 	osrs_t = 1	#Temperature oversampling x 1
@@ -140,6 +153,17 @@ def setup():
 	writeReg(0xF2, ctrl_hum_reg)
 	writeReg(0xF4, ctrl_meas_reg)
 	writeReg(0xF5, config_reg)
+
+def writeDB(dt, temp, hum, pres):
+	dbname = '/home/pi/pseud-netatmos/netatmo.fake'
+	#tablename = 'atmos'
+	with closing(sqlite3.connect(dbname)) as cn:
+		c = cn.cursor()
+		sql = 'INSERT INTO atmos(Date, Temperature, Humidity, Pressure) VALUES (?, ?, ?, ?);'
+		weather = (dt, temp, hum, pres)
+		c.execute(sql, weather)
+		cn.commit()
+		cn.close
 
 setup()
 get_calib_param()
